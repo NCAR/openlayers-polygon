@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>OpenLayers Rotate Features Example</title>
+    <link rel="stylesheet" href="default-style.css" type="text/css">
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <style type="text/css">
+        p {
+            width: 500px;
+        }
+    </style>
+    <script src="OpenLayers.debug.js"></script>
+    <script type="text/javascript">
+        var map, pointFeature, lineFeature, polygonFeature;
+
+        function fooStart(f,p) {
+         console.log('fooStart');
+         console.log(f);
+         console.log(p);
+        }
+        function fooDrag(f,p) {
+         console.log('fooDrag');
+         console.log(f);
+         console.log(p);
+        }
+        function fooComplete(f,p) {
+         console.log('fooComplete');
+         console.log(f);
+         console.log(p);
+        }
+        function fooEnter(f,p) {
+         console.log('fooEnter');
+         console.log(f);
+         console.log(p);
+        }
+        function fooLeave(f,p) {
+         console.log('fooLeave');
+         console.log(f);
+         console.log(p);
+        }
+
+        function init(){
+            map = new OpenLayers.Map('map', {controls: []});
+            var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0", {layers: 'basic'} );
+            //map.addLayer(layer);
+
+            var polygonLayer = new OpenLayers.Layer.Vector("Polygon Layer");
+            map.addLayers([layer,polygonLayer]);
+
+
+            var style_blue = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_blue.strokeColor = "blue"; 
+            style_blue.fillColor = "blue"; 
+            var style_green = {
+                strokeColor: "#339933",
+                strokeOpacity: 1,
+                strokeWidth: 3,
+                pointRadius: 6,
+                pointerEvents: "visiblePainted"
+            };
+
+            var vectorLayer = new OpenLayers.Layer.Vector("Simple Geometry");
+
+            // create a point feature
+            var point = new OpenLayers.Geometry.Point(-105, 40);
+            pointFeature = new OpenLayers.Feature.Vector(point, null, style_blue);
+
+            // create a polygon feature from a linear ring of points
+            var pointList = [];
+            for(var p=0; p<6; ++p) {
+                var a = p * (2 * Math.PI) / 6;
+                // + 30 120
+                //var r = Math.random(1) + 1;
+                var r = 1;
+                var newPoint = new OpenLayers.Geometry.Point(point.x + (r * Math.cos(a)),
+                                                             point.y + (r * Math.sin(a)));
+                pointList.push(newPoint);
+            }
+            pointList.push(pointList[0]);
+
+            var linearRing = new OpenLayers.Geometry.LinearRing(pointList);
+            polygonFeature = new OpenLayers.Feature.Vector(
+                new OpenLayers.Geometry.Polygon([linearRing])
+                );
+
+
+             var dragF = new OpenLayers.Control.DragFeature(vectorLayer,
+              {
+               onStart: fooStart ,
+               onDrag: fooDrag ,
+               onComplete: fooComplete ,
+               onEnter: fooEnter ,
+               onLeave: fooLeave
+             });
+
+            vectorLayer.addFeatures([pointFeature, polygonFeature]);
+            map.addLayer(vectorLayer);
+
+var polygonControl = new OpenLayers.Control.DrawFeature(polygonLayer,
+                                            OpenLayers.Handler.RegularPolygon,
+                                            {handlerOptions: {
+                                              sides: 6,
+                                              radius: 25
+                                              }
+                                            }
+                                          );
+
+var nav = new OpenLayers.Control.Navigation();
+var panel = new OpenLayers.Control.Panel({defaultControl: nav});
+panel.addControls([nav,dragF,polygonControl]);
+map.addControl(panel);
+
+            map.setCenter(new OpenLayers.LonLat(point.x, point.y), 5);
+        }
+    </script>
+  </head>
+  <body onload="init()">
+    <h1 id="title">Hex/poly feature demo</h1>
+
+    <div id="map" class="smallmap"></div>
+
+    <div id="docs">
+    Hex/poly feature demo with drag, resize, rotate / transform (eventually)
+    </div>
+  </body>
+</html>
