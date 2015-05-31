@@ -1,0 +1,76 @@
+<html>
+<head>
+<title>Simple example</title>
+<script src="jquery-2.1.4.js"></script>
+<link rel="stylesheet" href="ol.css" type="text/css">
+<script src="ol-debug.js"></script>
+<link rel="stylesheet" href="popup.css" type="text/css">
+</head>
+<body>
+<div id="map" class="map"></div>
+<div id="popup" class="ol-popup">
+  <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+  <div id="popup-content"></div>
+</div>
+<script>
+var view = new ol.View({
+  center: ol.proj.transform([ -100.980299 , 40.932247 ], 'EPSG:4326', 'EPSG:3857'),
+  zoom: 7
+});
+
+var map = new ol.Map({
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    })
+  ],
+  controls: ol.control.defaults({
+    attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
+      collapsible: false
+    })
+  }),
+  target: 'map',
+  view: view
+});
+
+var wmsSource = new ol.source.TileWMS({
+  url: 'http://mapserver.dev.eol.ucar.edu/catalog-mapserv?',
+  params: { LAYERS: 'pecanGrid' }
+});
+
+var pecanGrid = new ol.layer.Tile({
+  source: wmsSource
+});
+
+map.addLayer(pecanGrid);
+
+var overlay = new ol.Overlay({
+  element: $('#popup').get(0),
+  autoPan: true,
+  autoPanAnimation: { duration: 250 }
+});
+
+map.addOverlay(overlay);
+
+$('#popup-closer').click(function(evt) {
+  overlay.setPosition(undefined);
+  $('#popup-content').html('');
+  $(this).blur();
+  var posn = $('#popup-content').attr('coordinate');
+  if (posn) view.setCenter(JSON.parse(posn));
+});
+
+map.on('singleclick', function(evt) {
+  var viewResolution = evt.map.getView().getResolution();
+  var url = wmsSource.getGetFeatureInfoUrl(
+    evt.coordinate, viewResolution, 'EPSG:3857',
+    {'INFO_FORMAT': 'text/html', 'SRS': 'EPSG:3857', 'VERSION':'1.1.1'});
+  $.ajax(url).done(function(data,status,xhr) {
+    $('#popup-content').html(data).attr('coordinate',JSON.stringify(evt.coordinate));
+  });
+  overlay.setPosition(evt.coordinate);
+});
+
+</script>
+</body>
+</html>

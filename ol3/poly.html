@@ -1,0 +1,93 @@
+<html>
+<head>
+<title>Simple example</title>
+<script src="jquery-2.1.4.js"></script>
+<link rel="stylesheet" href="ol.css" type="text/css">
+<script src="ol-debug.js"></script>
+</head>
+<body>
+<div id="map" class="map"></div>
+<script>
+var mainView = new ol.View({
+  center: ol.proj.transform([ -100.980299 , 40.932247 ], 'EPSG:4326', 'EPSG:3857'),
+  zoom: 9
+});
+
+var map = new ol.Map({
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    })
+  ],
+  controls: ol.control.defaults({
+    attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
+      collapsible: false
+    })
+  }),
+  target: 'map',
+  view: mainView
+});
+
+var wmsSource = new ol.source.TileWMS({
+  url: 'http://mapserver.eol.ucar.edu/catalog-mapserv?',
+  params: { LAYERS: 'pecanGrid' }
+});
+
+var pecanGrid = new ol.layer.Tile({
+  source: wmsSource
+});
+
+map.addLayer(pecanGrid);
+
+
+var center = map.getView().getCenter();
+
+var styles = [
+  /* We are using two different styles for the polygons:
+   *  - The first style is for the polygons themselves.
+   *  - The second style is to draw the vertices of the polygons.
+   *    In a custom `geometry` function the vertices of a polygon are
+   *    returned as `MultiPoint` geometry, which will be used to render
+   *    the style.
+   */
+  new ol.style.Style({
+    stroke: new ol.style.Stroke({
+      color: 'blue',
+      width: 3
+    }),
+    fill: new ol.style.Fill({
+      color: 'rgba(0, 0, 255, 0.1)'
+    })
+  }),
+];
+
+var pointList = [];
+for(var p=0; p<6; ++p) {
+  var a = p * (2 * Math.PI) / 6;
+  var r = 25000;
+  var newPoint = [center[0] + (r * Math.cos(a)), center[1] + (r * Math.sin(a))];
+  pointList.push(newPoint);
+}
+//pointList.push(pointList[0]);
+
+//var polyRing = new ol.geom.LinearRing
+
+var polyFeature = new ol.Feature({
+  geometry: new ol.geom.Polygon([pointList]),
+  name: 'The Polygon'
+});
+
+var polySource = new ol.source.Vector({
+  features: [polyFeature]
+});
+
+var polyLayer = new ol.layer.Vector({
+  source: polySource,
+  style: styles
+});
+
+map.addLayer(polyLayer);
+
+</script>
+</body>
+</html>

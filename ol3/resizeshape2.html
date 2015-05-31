@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <script src="jquery-2.1.4.js"></script>
+    <link rel="stylesheet" href="ol.css" type="text/css">
+    <script src="ol-debug.js"></script>
+    <title>Regular Shape example</title>
+</head>
+<body>
+<div id="map" class="map"></div>
+<script>
+
+var mainView = new ol.View({
+  center: ol.proj.transform([ -100.980299 , 40.932247 ], 'EPSG:4326', 'EPSG:3857'),
+  zoom: 9
+});
+
+var map = new ol.Map({
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    }),
+  ],
+  target: 'map',
+  view: mainView
+});
+
+var wmsSource = new ol.source.TileWMS({
+  url: 'http://mapserver.eol.ucar.edu/catalog-mapserv?',
+  params: { LAYERS: 'pecanGrid' }
+});
+
+var pecanGrid = new ol.layer.Tile({
+  source: wmsSource
+});
+
+map.addLayer(pecanGrid);
+
+var center = map.getView().getCenter();
+
+mainView.on('change:resolution',changeRes);
+
+
+var stroke = new ol.style.Stroke({
+  color: 'blue',
+  width: 3
+});
+
+var fill = new ol.style.Fill({
+  color: 'rgba(0, 0, 255, 0.1)'
+});
+
+var angle_ = goog.math.toRadians(30); // 360deg/points/2
+var rotation_ = 0;
+
+var hexStyle = new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 6,
+      radius: 25,  // TODO: calculate based on current map zoom/resolution
+      //rotation: x,
+      angle: angle_
+    })
+  });
+
+var styles = [];
+
+if (hexStyle) styles.push(hexStyle);
+
+var point = new ol.geom.Point(center);
+var polyFeature = null;
+polyFeature = new ol.Feature(point);
+polyFeature.setStyle(styleFun);
+
+var source = new ol.source.Vector({
+  features: [polyFeature]
+});
+
+var vectorLayer = new ol.layer.Vector({
+  source: source
+});
+
+map.addLayer(vectorLayer);
+
+function changeRes(evt) {
+  console.log('changeRes evt='+evt);
+  console.log(evt);
+  var scale = evt.oldValue / mainView.getResolution()
+  console.log('scale='+scale);
+}
+
+var res_ = mainView.getResolution();
+var radius_ = calcMapRadius(25000,map);
+
+console.log('radius_='+radius_);
+console.log('radiusM='+calcRadiusMeters(radius_,map));
+
+function calcMapRadius(radiusMeters,map,point) {
+  var view = map.getView();
+  if (!point) point = view.getCenter();
+  var pro = view.getProjection();
+  var mpu = pro.getMetersPerUnit();
+  var res = view.getResolution();
+  var ptres = pro.getPointResolution(res, point);
+  var mapRadius = radiusMeters / mpu / ptres;
+  //var mapRadius = radiusMeters * res / mpu / ptres;
+  return mapRadius;
+}
+
+function calcRadiusMeters(mapRadius,map,point) {
+  var view = map.getView();
+  if (!point) point = view.getCenter();
+  var pro = view.getProjection();
+  var mpu = pro.getMetersPerUnit();
+  var res = view.getResolution();
+  var ptres = pro.getPointResolution(res, point);
+  var radiusMeters = mapRadius * mpu * ptres;
+  //var radiusMeters = mapRadius * mpu * ptres / res;
+  return radiusMeters;
+}
+
+function styleFun(res) {
+  console.log('styleFun res='+res+' old='+res_);
+  var scale = res_ / mainView.getResolution()
+  console.log('scale='+scale);
+  res_ = mainView.getResolution();
+  radius_ *= scale;
+
+  console.log('radius_='+radius_);
+  console.log('radiusM='+calcRadiusMeters(radius_,map));
+
+  // some ideas from http://stackoverflow.com/questions/23264721/how-to-draw-circle-with-radius-in-openlayers
+
+  var pro = mainView.getProjection();
+  //var ptres = pro.getPointResolution(res_, polyFeature.getGeometry().getFirstCoordinate());
+  var ptres = pro.getPointResolution(res_, this.getGeometry().getFirstCoordinate());
+  var resSc = res_ / ptres;
+  console.log('ptres='+ptres);
+  console.log('resSc='+resSc);
+
+  return [new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 6,
+
+      //radius: radius_ / ptres,
+      //radius: radius_ * resSc,
+      radius: radius_,
+
+      //scale: scale,
+      //scale: 1,
+
+      //rotation: x,
+
+      angle: angle_
+    })
+  })];
+
+}
+
+var coordinate_ = null;
+var cursor_ = 'pointer';
+var previousCursor_ = undefined;
+var origDist_ = 0;
+
+function polyHandleDownEvent(evt) {
+  //console.log('down');
+
+  var feature = map.forEachFeatureAtPixel(evt.pixel,
+    function(feature, layer) {
+      console.log('down feature='+feature);
+      console.log(feature);
+      if (feature === polyFeature)
+        return feature;
+    });
+
+  if (feature) {
+    coordinate_ = evt.coordinate;
+    var geometry = feature.getGeometry();
+    var fc = geometry.getFirstCoordinate();
+    var dX = coordinate_[0] - fc[0];
+    var dY = coordinate_[1] - fc[1];
+    origDist_ = Math.sqrt(dX*dX+dY*dY);
+    if (evt.browserEvent.shiftKey) { // resize
+      console.log('down+SHIFT!');
+      //radius_ = origDist_;
+      // set the radius to the distance from center to current mouse location
+      radius_ = calcMapRadius(origDist_,map);
+      geometry.translate(0,0);
+    }
+    return true;
+  }
+
+  origDist_ = 0;
+  coordinate_ = null;
+  return false;
+};
+
+var changeRate_ = 100;
+var minRadius_ = 10;
+
+function polyHandleDragEvent(evt) {
+  console.log('Drag');
+  var map = evt.map;
+  var dX = 0;
+  var dY = 0;
+
+  var feature = map.forEachFeatureAtPixel(evt.pixel,
+    function(feature, layer) {
+      console.log('drag feature='+feature);
+      console.log(feature);
+      if (feature === polyFeature)
+        return feature;
+    });
+
+  if (!feature) return true;
+
+  var geometry = feature.getGeometry();
+  var fc = geometry.getFirstCoordinate();
+  dX = coordinate_[0] - fc[0];
+  dY = coordinate_[1] - fc[1];
+  var prevDistCen = Math.sqrt(dX*dX+dY*dY);
+  console.log('prevDistCen='+prevDistCen);
+  dX = evt.coordinate[0] - fc[0];
+  dY = evt.coordinate[1] - fc[1];
+  var newDistCen = Math.sqrt(dX*dX+dY*dY);
+  console.log('newDistCen='+newDistCen);
+
+  //var change = newDistCen - origDist_;
+  var change = newDistCen - prevDistCen;
+  console.log('change='+change);
+
+  if (evt.browserEvent.shiftKey) { // resize
+    console.log('Drag+SHIFT!');
+    console.log('radius_='+radius_);
+
+    // set the new radius, modulated by changeRate, with a minimum
+    //radius_ = Math.max(radius_+change/changeRate_,minRadius_);
+    //radius_= newDistCen;
+
+    // set the radius to the distance from center to current mouse location
+    radius_ = calcMapRadius(newDistCen,map);
+
+    console.log('NEW radius_='+radius_);
+
+    // force a render
+    //geometry.translate(0,0);
+    //return;
+
+    dX=0;dY=0; // don't move, just force a render with the new size
+  } else if (evt.browserEvent.ctrlKey) { // rotate
+    console.log('Drag+CTRL!');
+    dX=0;dY=0; // don't move, just force a render with the new angle
+  } else { // move
+    dX = evt.coordinate[0] - coordinate_[0];
+    dY = evt.coordinate[1] - coordinate_[1];
+    var moveDist = Math.sqrt(dX*dX+dY*dY);
+  }
+
+  geometry.translate(dX, dY);
+
+  // TODO: callback or set a DOMElement with feature's lonlat
+  fc = geometry.getFirstCoordinate();
+  console.log('fc='+fc);
+  console.log('ec='+evt.coordinate);
+  lonlat = ol.proj.transform(fc, map.getView().getProjection(), 'EPSG:4326');
+  lonlat[0] = Math.round(lonlat[0]*10000)/10000;
+  lonlat[1] = Math.round(lonlat[1]*10000)/10000;
+  console.log('feature lonlat='+lonlat);
+
+  coordinate_[0] = evt.coordinate[0];
+  coordinate_[1] = evt.coordinate[1];
+};
+
+function polyHandleMoveEvent(evt) {
+  //console.log('Move');
+// TODO: show vertices and/or control points
+// e.g. resize on one vertex, rotate on another, move icon in center
+ if (cursor_) {
+    var map = evt.map;
+    var feature = map.forEachFeatureAtPixel(evt.pixel,
+        function(feature, layer) {
+         if (feature === polyFeature)
+            return feature;
+        });
+    var element = evt.map.getTargetElement();
+    if (feature) {
+      if (element.style.cursor != cursor_) {
+        previousCursor_ = element.style.cursor;
+        element.style.cursor = cursor_;
+      }
+    } else if (previousCursor_ !== undefined) {
+      element.style.cursor = previousCursor_;
+      previousCursor_ = undefined;
+    }
+  }
+};
+
+function polyHandleUpEvent(evt) {
+  //console.log('UP');
+  coordinate_ = null;
+  origDist_ = 0;
+  return false;
+};
+
+var polyDrag = new ol.interaction.Pointer({
+  handleDownEvent: polyHandleDownEvent,
+  handleDragEvent: polyHandleDragEvent,
+  handleMoveEvent: polyHandleMoveEvent,
+  handleUpEvent: polyHandleUpEvent
+});
+
+map.addInteraction(polyDrag);
+
+
+</script>
+</body>
+</html>

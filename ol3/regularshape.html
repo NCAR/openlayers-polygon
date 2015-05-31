@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+<script src="jquery-2.1.4.js"></script>
+<link rel="stylesheet" href="ol.css" type="text/css">
+<script src="ol-debug.js"></script>
+    <title>Regular Shape example</title>
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+
+<script>
+var stroke = new ol.style.Stroke({color: 'black', width: 2});
+var fill = new ol.style.Fill({color: 'red'});
+
+var styles = {
+  'square': [new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 4,
+      radius: 10,
+      angle: Math.PI / 4
+    })
+  })],
+  'triangle': [new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 3,
+      radius: 10,
+      rotation: Math.PI / 4,
+      angle: 0
+    })
+  })],
+  'star': [new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 5,
+      radius: 10,
+      radius2: 4,
+      angle: 0
+    })
+  })],
+  'cross': [new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 4,
+      radius: 10,
+      radius2: 0,
+      angle: 0
+    })
+  })],
+  'x': [new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 4,
+      radius: 10,
+      radius2: 0,
+      angle: Math.PI / 4
+    })
+  })]
+};
+
+
+var styleKeys = ['x', 'cross', 'star', 'triangle', 'square'];
+var count = 250;
+var features = new Array(count);
+var e = 4500000;
+for (var i = 0; i < count; ++i) {
+  var coordinates = [2 * e * Math.random() - e, 2 * e * Math.random() - e];
+  features[i] = new ol.Feature(new ol.geom.Point(coordinates));
+  features[i].setStyle(styles[styleKeys[Math.floor(Math.random() * 5)]]);
+}
+
+var source = new ol.source.Vector({
+  features: features
+});
+
+var vectorLayer = new ol.layer.Vector({
+  source: source
+});
+
+var mainView = new ol.View({
+  center: [0,0],
+  zoom: 4
+});
+
+var map = new ol.Map({
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    }),
+    vectorLayer
+  ],
+  target: 'map',
+  view: mainView
+});
+
+</script>
+
+  </body>
+</html>

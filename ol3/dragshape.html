@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <script src="jquery-2.1.4.js"></script>
+    <link rel="stylesheet" href="ol.css" type="text/css">
+    <script src="ol-debug.js"></script>
+    <title>Regular Shape example</title>
+</head>
+<body>
+<div id="map" class="map"></div>
+<script>
+
+var mainView = new ol.View({
+  center: ol.proj.transform([ -100.980299 , 40.932247 ], 'EPSG:4326', 'EPSG:3857'),
+  zoom: 9
+});
+
+var map = new ol.Map({
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    }),
+  ],
+  target: 'map',
+  view: mainView
+});
+
+var wmsSource = new ol.source.TileWMS({
+  url: 'http://mapserver.eol.ucar.edu/catalog-mapserv?',
+  params: { LAYERS: 'pecanGrid' }
+});
+
+var pecanGrid = new ol.layer.Tile({
+  source: wmsSource
+});
+
+map.addLayer(pecanGrid);
+
+var center = map.getView().getCenter();
+
+mainView.on('change:resolution',changeRes);
+
+
+var stroke = new ol.style.Stroke({
+  color: 'blue',
+  width: 3
+});
+
+var fill = new ol.style.Fill({
+  color: 'rgba(0, 0, 255, 0.1)'
+});
+
+var hexStyle = new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 6,
+      radius: 25,  // TODO: calculate based on current map zoom/resolution
+      //rotation: x,
+      angle: goog.math.toRadians(30) // 360deg/points/2
+    })
+  });
+
+var styles = [];
+
+if (hexStyle) styles.push(hexStyle);
+
+var point = new ol.geom.Point(center);
+var polyFeature = null;
+polyFeature = new ol.Feature(point);
+polyFeature.setStyle(styleFun);
+
+var source = new ol.source.Vector({
+  features: [polyFeature]
+});
+
+var vectorLayer = new ol.layer.Vector({
+  source: source
+});
+
+map.addLayer(vectorLayer);
+
+function changeRes(evt) {
+  console.log('changeRes evt='+evt);
+  console.log(evt);
+  var scale = evt.oldValue / mainView.getResolution()
+  console.log('scale='+scale);
+}
+
+var res_ = mainView.getResolution();
+var radius_ = calcMapRadius(25000,map);
+
+console.log('radius_='+radius_);
+console.log('radiusM='+calcRadiusMeters(radius_,map));
+
+function calcMapRadius(radiusMeters,map,point) {
+  var view = map.getView();
+  if (!point) point = view.getCenter();
+  var pro = view.getProjection();
+  var mpu = pro.getMetersPerUnit();
+  var res = view.getResolution();
+  var ptres = pro.getPointResolution(res, point);
+  var mapRadius = radiusMeters / mpu / ptres;
+  //var mapRadius = radiusMeters * res / mpu / ptres;
+  return mapRadius;
+}
+
+function calcRadiusMeters(mapRadius,map,point) {
+  var view = map.getView();
+  if (!point) point = view.getCenter();
+  var pro = view.getProjection();
+  var mpu = pro.getMetersPerUnit();
+  var res = view.getResolution();
+  var ptres = pro.getPointResolution(res, point);
+  var radiusMeters = mapRadius * mpu * ptres;
+  //var radiusMeters = mapRadius * mpu * ptres / res;
+  return radiusMeters;
+}
+
+function styleFun(res) {
+  console.log('styleFun res='+res+' old='+res_);
+  var scale = res_ / mainView.getResolution()
+  console.log('scale='+scale);
+  res_ = mainView.getResolution();
+  radius_ *= scale;
+
+  console.log('radius_='+radius_);
+  console.log('radiusM='+calcRadiusMeters(radius_,map));
+
+  // some ideas from http://stackoverflow.com/questions/23264721/how-to-draw-circle-with-radius-in-openlayers
+
+  var pro = mainView.getProjection();
+  //var ptres = pro.getPointResolution(res_, polyFeature.getGeometry().getFirstCoordinate());
+  var ptres = pro.getPointResolution(res_, this.getGeometry().getFirstCoordinate());
+  var resSc = res_ / ptres;
+  console.log('ptres='+ptres);
+  console.log('resSc='+resSc);
+
+  return [new ol.style.Style({
+    image: new ol.style.RegularShape({
+      fill: fill,
+      stroke: stroke,
+      points: 6,
+
+      //radius: radius_ / ptres,
+      //radius: radius_ * resSc,
+      radius: radius_,
+
+      //scale: scale,
+      //scale: 1,
+
+      //rotation: x,
+
+      angle: goog.math.toRadians(30) // 360deg/points/2
+    })
+  })];
+
+}
+
+var coordinate_ = null;
+var cursor_ = 'pointer';
+var previousCursor_ = undefined;
+
+function polyHandleDownEvent(evt) {
+  //console.log('down');
+
+  var feature = map.forEachFeatureAtPixel(evt.pixel,
+    function(feature, layer) {
+      console.log('down feature='+feature);
+      console.log(feature);
+      if (feature === polyFeature)
+        return feature;
+    });
+
+  if (feature) {
+    coordinate_ = evt.coordinate;
+    return true;
+  }
+
+  coordinate_ = null;
+  return false;
+};
+
+function polyHandleDragEvent(evt) {
+  console.log('Drag');
+  var map = evt.map;
+
+  var deltaX = evt.coordinate[0] - coordinate_[0];
+  var deltaY = evt.coordinate[1] - coordinate_[1];
+
+  var feature = map.forEachFeatureAtPixel(evt.pixel,
+    function(feature, layer) {
+      console.log('drag feature='+feature);
+      console.log(feature);
+      if (feature === polyFeature)
+        return feature;
+    });
+
+  if (!feature) return true;
+
+  var geometry = feature.getGeometry();
+  geometry.translate(deltaX, deltaY);
+
+  // TODO: callback or set a DOMElement with feature's lonlat
+  var fc = geometry.getFirstCoordinate();
+  console.log('fc='+fc);
+  console.log('ec='+evt.coordinate);
+  lonlat = ol.proj.transform(fc, map.getView().getProjection(), 'EPSG:4326');
+  lonlat[0] = Math.round(lonlat[0]*10000)/10000;
+  lonlat[1] = Math.round(lonlat[1]*10000)/10000;
+  console.log('feature lonlat='+lonlat);
+
+  coordinate_[0] = evt.coordinate[0];
+  coordinate_[1] = evt.coordinate[1];
+};
+
+function polyHandleMoveEvent(evt) {
+  //console.log('Move');
+// TODO: show vertices and/or control points
+// e.g. resize on one vertex, rotate on another, move icon in center
+ if (cursor_) {
+    var map = evt.map;
+    var feature = map.forEachFeatureAtPixel(evt.pixel,
+        function(feature, layer) {
+         if (feature === polyFeature)
+            return feature;
+        });
+    var element = evt.map.getTargetElement();
+    if (feature) {
+      if (element.style.cursor != cursor_) {
+        previousCursor_ = element.style.cursor;
+        element.style.cursor = cursor_;
+      }
+    } else if (previousCursor_ !== undefined) {
+      element.style.cursor = previousCursor_;
+      previousCursor_ = undefined;
+    }
+  }
+};
+
+function polyHandleUpEvent(evt) {
+  //console.log('UP');
+  coordinate_ = null;
+  return false;
+};
+
+var polyDrag = new ol.interaction.Pointer({
+  handleDownEvent: polyHandleDownEvent,
+  handleDragEvent: polyHandleDragEvent,
+  handleMoveEvent: polyHandleMoveEvent,
+  handleUpEvent: polyHandleUpEvent
+});
+
+map.addInteraction(polyDrag);
+
+
+</script>
+</body>
+</html>
