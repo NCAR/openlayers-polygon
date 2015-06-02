@@ -1,0 +1,175 @@
+<html> 
+<head> 
+<title>PECAN sites demo</title>
+<style type="text/css">
+	html { height: 100%; }
+ 	body { height: 100%; margin: 0px; padding: 0px; }
+	#map_canvas { height: 100%; }
+    div.olControlAttribution { }
+    #OpenLayers_Control_MousePosition_7 { bottom: 1em !important; }
+    .olControlMousePosition { background-color: white; }
+    #polygonInfo {
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      z-index: 9999;
+      background-color: white;
+    }
+</style>
+<script src="OpenLayers-2.13.1/OpenLayers.debug.js"></script>
+<script src="cleanpolyinfo.js"></script>
+<script>
+var map;
+
+var pro9 = new OpenLayers.Projection('EPSG:900913'); // G**gle, same as 3857
+var pro3 = new OpenLayers.Projection('EPSG:3857');  // OpenLayers default
+var pro4 = new OpenLayers.Projection('EPSG:4326');  // WGS84, GPS, longlat
+
+// Avoid pink error tiles
+OpenLayers.IMAGE_RELOAD_ATTEMPTS = 5;
+OpenLayers.Util.onImageLoadErrorColor = "transparent";
+
+  function initialize() {
+
+    var map_controls = [
+        new OpenLayers.Control.Navigation(),
+        new OpenLayers.Control.PanZoom(),
+        new OpenLayers.Control.LayerSwitcher({'ascending': false}),
+        new OpenLayers.Control.Attribution({separator:',<br>',
+          template:'<span class="attribution-layers">${layers}</span>'
+          }),
+        new OpenLayers.Control.MousePosition(),
+        new OpenLayers.Control.MousePosition({displayProjection:pro9}),
+    ];
+
+    var map_options = {
+        controls: map_controls,
+
+        maxResolution: "auto",
+        maxExtent: new OpenLayers.Bounds(-105, 33, -94, 45).transform(pro4,pro9)
+
+        ,displayProjection: new OpenLayers.Projection("EPSG:4326")
+        //,projection: "EPSG:900913"
+        //,projection: "EPSG:4326"
+    };
+
+     map = new OpenLayers.Map("map_canvas", map_options);
+
+     var osm = new OpenLayers.Layer.OSM(null,null,{});
+     map.addLayer( osm ); 
+
+    /* gridpoints layer */
+
+     var pecanGrid = new OpenLayers.Layer.WMS("PECAN Gridpoints",
+       "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
+        { layers: 'pecanGrid',
+          transparent: true
+        },
+        {isBaseLayer: false, opacity: 1.0, visibility: true}
+        );
+     map.addLayer( pecanGrid ); 
+
+
+    /* site points */
+
+     var pecanSites = new OpenLayers.Layer.WMS("PECAN 2015 sites",
+       "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
+        { layers: 'pecanSites',
+          transparent: true
+        },
+        {isBaseLayer: false, opacity: 1.0, visibility: false}
+        );
+     map.addLayer( pecanSites ); 
+
+     var pecanSites5 = new OpenLayers.Layer.WMS("PECAN rank 5",
+       "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
+        { layers: 'pecanSites5',
+          transparent: true
+        },
+        {isBaseLayer: false, opacity: 1.0, visibility: false}
+        );
+     map.addLayer( pecanSites5 ); 
+
+     var pecanSites4 = new OpenLayers.Layer.WMS("PECAN rank 4",
+       "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
+        { layers: 'pecanSites4',
+          transparent: true
+        },
+        {isBaseLayer: false, opacity: 1.0, visibility: false}
+        );
+     map.addLayer( pecanSites4 ); 
+
+     var pecanSites3 = new OpenLayers.Layer.WMS("PECAN rank 3",
+       "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
+        { layers: 'pecanSites3',
+          transparent: true
+        },
+        {isBaseLayer: false, opacity: 1.0, visibility: false}
+        );
+     map.addLayer( pecanSites3 ); 
+
+     var pecanSites2 = new OpenLayers.Layer.WMS("PECAN rank 2",
+       "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
+        { layers: 'pecanSites2',
+          transparent: true
+        },
+        {isBaseLayer: false, opacity: 1.0, visibility: false}
+        );
+     map.addLayer( pecanSites2 ); 
+
+     var pecanSites1 = new OpenLayers.Layer.WMS("PECAN rank 1",
+       "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
+        { layers: 'pecanSites1',
+          transparent: true
+        },
+        {isBaseLayer: false, opacity: 1.0, visibility: false}
+        );
+     map.addLayer( pecanSites1 ); 
+
+
+
+     var info = new OpenLayers.Control.WMSGetFeatureInfo({
+       drillDown: false,
+       queryVisible: true,
+       panMapIfOutOfView: false,
+       url: 'http://mapserver.dev.eol.ucar.edu/catalog-mapserv?',
+
+       // pecanSites
+       layers: [pecanSites1,pecanSites2,pecanSites3,pecanSites4,pecanSites5,pecanGrid],
+
+       maxFeatures: 1,
+       eventListeners: { getfeatureinfo: showInfo }
+       });
+     map.addControl(info);
+     info.activate();
+
+     function showInfo(event) {
+       popup = new OpenLayers.Popup.FramedCloud('layerinfo',
+         map.getLonLatFromPixel(event.xy), null,
+         event.text,
+         null, true );
+       map.addPopup(popup, true);
+     }
+
+     //var conus_center = new OpenLayers.LonLat(-100.00, 39.0);
+     //map.setCenter(conus_center.transform(pro4, map.getProjectionObject()));
+     //var map_max = new OpenLayers.Bounds(-105, 33, -94, 45).transform(pro4,map.getProjectionObject());
+     //map.zoomToExtent(map_max,true);
+
+     var hays_zoombox = new OpenLayers.Bounds(-100.1, 38.4, -98.5, 39.4).transform(pro4,map.getProjectionObject());
+     map.zoomToExtent(hays_zoombox,true);
+
+     var hays_gridpoint = new OpenLayers.LonLat(-99.268588,38.899496);
+     map.setCenter(hays_gridpoint.transform(pro4, map.getProjectionObject()));
+
+   FUNPOLYINFO.createPolygon({map:map,sides:6,activate:true,element:'polygonInfo'});
+   
+   return true;
+   }
+</script>
+</head>
+<body onload="initialize()">
+<div id="polygonInfo"></div>
+<div id="map_canvas"></div>
+</body>
+</html>
