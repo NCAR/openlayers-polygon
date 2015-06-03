@@ -29,11 +29,17 @@ var EOL = (function(eol,$) {
   function afterXform(e) {
     //console.log('afterXform e='+e);
     //console.log(e);
-    var l=e.feature.geometry.components[0];
-    var c=l.getCentroid();
+    var lr=e.feature.geometry.components[0];
+    var c=lr.getCentroid();
     var ll=c.transform(mappro_,pro4_);
-    var r=l.getLength();
-    var rkm=Math.round(r/1000.0)/10.0;
+
+    // don't use lr.getLength() -- weird units
+    var p0 = lr.components[0];
+    var p1 = lr.components[1];
+    var dx = p0.x - p1.x;
+    var dy = p0.y - p1.y;
+    var r = Math.sqrt(dx * dx + dy * dy);
+    var rkm = Math.round(r/100.0)/10.0;
 
     return changeInfo({
       center:c, lonlat:ll,
@@ -157,10 +163,7 @@ var EOL = (function(eol,$) {
     var center = options.center || map.getCenter();
     var mapPoint = new OpenLayers.Geometry.Point(center.lon,center.lat);
 
-    /* radius (length for a hexagon) in map units
-     * 25000 results in ~15Km
-     * 41666.66667 results in ~25Km
-     */
+    // radius (length for a hexagon) in map units
     var r = options.radius || 25000;
 
     // create a polygon feature from a linear ring of points
