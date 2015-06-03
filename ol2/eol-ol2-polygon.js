@@ -42,18 +42,16 @@ var EOL = (function(eol,$) {
     });
   }
 
-  function updateInfo(html) {
-    if (typeof element_ === 'undefined' || element_ === null) return;
-    element_.innerHTML=html;
-    return true;
-  }
-
   function changeInfo(data) {
     if (changeCallback_) return changeCallback_(data);
+    if (typeof element_ === 'undefined' || element_ === null) return false;
 
-    var txt = 'C='+llround(data.lonlat.y)+','+llround(data.lonlat.x)+',R='+data.radiusKm+'Km';
+    var txt = ''
+    if (data) txt = 'C='+llround(data.lonlat.y)+','+llround(data.lonlat.x)+',R='+data.radiusKm+'Km';
+
     //console.log(txt);
-    return updateInfo(txt);
+    element_.innerHTML=txt;
+    return true;
   }
 
   eol.activatePolygon = function(map) {
@@ -68,28 +66,10 @@ var EOL = (function(eol,$) {
     if (map.getLayer(vectorLayer_.id)) return true; // already activated
     if (!map.addLayer(vectorLayer_)) return false;  // map error
 
-    /* doesn't work
-     * move the polygon to map center if it's not visible
-     *
-    var l = polygonFeature_.geometry.getCentroid().getLength();
-    var c = map.getCenter();
-    if (!vectorLayer_.getExtent().intersectsBounds(c)) {
-      var b = new OpenLayers.Bounds();
-      b.extend(c);
-      var p = b.getCenterPixel();
-      b.extend(new OpenLayers.LonLat(c.lon+l,c.lat+l));
-      b.extend(new OpenLayers.LonLat(c.lon+l,c.lat-l));
-      b.extend(new OpenLayers.LonLat(c.lon-l,c.lat+l));
-      b.extend(new OpenLayers.LonLat(c.lon-l,c.lat-l));
-      vectorLayer_.moveTo(b,p,true);
-    }
-
-     * this moves the polygon but not the control box
     if (!polygonFeature_.geometry.getBounds().intersectsBounds(map.getExtent())) {
       var c = map.getCenter();
       polygonFeature_.move(c);
     }
-    */
 
     map.addControl(xformControl_);
     xformControl_.setFeature(polygonFeature_);
@@ -104,7 +84,7 @@ var EOL = (function(eol,$) {
 
     if (!map.getLayer(vectorLayer_.id)) return true; // already deactivated
 
-    updateInfo('');
+    changeInfo('');
     xformControl_.unsetFeature();
     xformControl_.deactivate();
     return map.removeLayer(vectorLayer_);
@@ -177,11 +157,16 @@ var EOL = (function(eol,$) {
     var center = options.center || map.getCenter();
     var mapPoint = new OpenLayers.Geometry.Point(center.lon,center.lat);
 
+    /* radius (length for a hexagon) in map units
+     * 25000 results in ~15Km
+     * 41666.66667 results in ~25Km
+     */
+    var r = options.radius || 25000;
+
     // create a polygon feature from a linear ring of points
     var pointList = [];
     for(var p=0; p<sides; ++p) {
         var a = p * (2 * Math.PI) / sides;
-        var r = 25000;
         var newPoint = new OpenLayers.Geometry.Point(
           mapPoint.x + (r * Math.cos(a)),
           mapPoint.y + (r * Math.sin(a))
