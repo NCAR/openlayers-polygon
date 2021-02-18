@@ -1,10 +1,10 @@
-<html> 
-<head> 
-<title>PECAN sites demo</title>
+<html>
+<head>
+<title>polygon/sites demo</title>
 <style type="text/css">
-	html { height: 100%; }
- 	body { height: 100%; margin: 0px; padding: 0px; }
-	#map_canvas { height: 100%; }
+    html { height: 100%; }
+    body { height: 100%; margin: 0px; padding: 0px; }
+    #map_canvas { height: 100%; }
     div.olControlAttribution { }
     #OpenLayers_Control_MousePosition_7 { bottom: 1em !important; }
     .olControlMousePosition { background-color: white; }
@@ -16,7 +16,10 @@
       background-color: white;
     }
 </style>
-<script src="OpenLayers-2.13.1/OpenLayers.debug.js"></script>
+
+<!-- cached OL 2.13.1 : the file at openlayers.org is "Release 2.14 dev" with a broken baseLayer -->
+<script src="OpenLayers.debug.js"></script>
+
 <script src="eol-ol2-polygon.js"></script>
 <script>
 var map;
@@ -28,6 +31,8 @@ var pro4 = new OpenLayers.Projection('EPSG:4326');  // WGS84, GPS, longlat
 // Avoid pink error tiles
 OpenLayers.IMAGE_RELOAD_ATTEMPTS = 5;
 OpenLayers.Util.onImageLoadErrorColor = "transparent";
+
+OpenLayers.ImgPath = "http://dev.openlayers.org/releases/OpenLayers-2.13.1/img/";
 
   function initialize() {
 
@@ -56,7 +61,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
      map = new OpenLayers.Map("map_canvas", map_options);
 
      var osm = new OpenLayers.Layer.OSM(null,null,{});
-     map.addLayer( osm ); 
+     map.addLayer( osm );
 
     /* gridpoints layer */
 
@@ -67,7 +72,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
         },
         {isBaseLayer: false, opacity: 1.0, visibility: true}
         );
-     map.addLayer( pecanGrid ); 
+     map.addLayer( pecanGrid );
 
 
     /* site points */
@@ -79,7 +84,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
         },
         {isBaseLayer: false, opacity: 1.0, visibility: false}
         );
-     map.addLayer( pecanSites ); 
+     map.addLayer( pecanSites );
 
      var pecanSites5 = new OpenLayers.Layer.WMS("PECAN rank 5",
        "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
@@ -88,7 +93,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
         },
         {isBaseLayer: false, opacity: 1.0, visibility: false}
         );
-     map.addLayer( pecanSites5 ); 
+     map.addLayer( pecanSites5 );
 
      var pecanSites4 = new OpenLayers.Layer.WMS("PECAN rank 4",
        "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
@@ -97,7 +102,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
         },
         {isBaseLayer: false, opacity: 1.0, visibility: false}
         );
-     map.addLayer( pecanSites4 ); 
+     map.addLayer( pecanSites4 );
 
      var pecanSites3 = new OpenLayers.Layer.WMS("PECAN rank 3",
        "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
@@ -106,7 +111,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
         },
         {isBaseLayer: false, opacity: 1.0, visibility: false}
         );
-     map.addLayer( pecanSites3 ); 
+     map.addLayer( pecanSites3 );
 
      var pecanSites2 = new OpenLayers.Layer.WMS("PECAN rank 2",
        "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
@@ -115,7 +120,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
         },
         {isBaseLayer: false, opacity: 1.0, visibility: false}
         );
-     map.addLayer( pecanSites2 ); 
+     map.addLayer( pecanSites2 );
 
      var pecanSites1 = new OpenLayers.Layer.WMS("PECAN rank 1",
        "http://mapserver.dev.eol.ucar.edu/catalog-mapserv?",
@@ -124,7 +129,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
         },
         {isBaseLayer: false, opacity: 1.0, visibility: false}
         );
-     map.addLayer( pecanSites1 ); 
+     map.addLayer( pecanSites1 );
 
 
 
@@ -166,7 +171,7 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
      map:map, sides:6, activate:true, element:'polygonInfo',
      radius: 41666.66667
      });
-   
+
    return true;
    }
 </script>

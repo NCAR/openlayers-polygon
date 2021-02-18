@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2015 by UCAR
+ * BSD 2-Clause License:
+ * https://raw.githubusercontent.com/NCAR/openlayers-polygon/main/LICENSE
+ *
+ * Usage: see the comments before createPolygon function and the associated file "eol.html"
+ */
+
 var EOL = (function(eol,$) {
   var global = this;
 
@@ -96,6 +104,23 @@ var EOL = (function(eol,$) {
     return map.removeLayer(vectorLayer_);
   };
 
+  /**
+   * Create a Polygon overlay
+   * Click to drag, SHIFT+click to resize, ALT+click to rotate, SHIFT+ALT+click for both.
+   * Parameters are a Map or an options object that includes a map key
+   *
+   * @param map The instantiated Map to which to add a polygon.
+   * @param sides Number of sides (i.e. number of vertices) (default 6).
+   * @param activate Whether to immediately activate (draw) the polygon.
+   * @param pointUp Whether to point the polygon "up".
+   * @param element The jQuery element(s), DOM element,
+   *   or id string of the element on which to set polygon information (lat,lon,radius),
+   *   or function to call with that info.
+   * @param callback A function to call when the polygon information changes.
+   *   Overrides element.
+   * @param radius Initial radius in map units.
+   * @param center Initial center location of polygon.
+   */
   eol.createPolygon = function(options) {
     if (typeof options === 'undefined' || options === null)
       throw new Error('must have a map or options');
