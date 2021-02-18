@@ -1,0 +1,90 @@
+<html>
+<head>
+<title>polygon/sites demo</title>
+<style type="text/css">
+    html { height: 100%; }
+    body { height: 100%; margin: 0px; padding: 0px; }
+    #map_canvas { height: 100%; }
+    div.olControlAttribution { }
+    #OpenLayers_Control_MousePosition_7 { bottom: 1em !important; }
+    .olControlMousePosition { background-color: white; }
+    #polygonInfo {
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      z-index: 9999;
+      background-color: white;
+    }
+</style>
+
+<!-- cached OL 2.13.1 : the file at openlayers.org is "Release 2.14 dev" with a broken baseLayer -->
+<script src="OpenLayers.debug.js"></script>
+
+<script src="eol-ol2-polygon.js"></script>
+<script>
+var map;
+
+var pro9 = new OpenLayers.Projection('EPSG:900913'); // G**gle, same as 3857
+var pro3 = new OpenLayers.Projection('EPSG:3857');  // OpenLayers default
+var pro4 = new OpenLayers.Projection('EPSG:4326');  // WGS84, GPS, longlat
+
+// Avoid pink error tiles
+OpenLayers.IMAGE_RELOAD_ATTEMPTS = 5;
+OpenLayers.Util.onImageLoadErrorColor = "transparent";
+
+OpenLayers.ImgPath = "http://dev.openlayers.org/releases/OpenLayers-2.13.1/img/";
+
+  function initialize() {
+
+    var map_controls = [
+        new OpenLayers.Control.Navigation(),
+        new OpenLayers.Control.PanZoom(),
+        new OpenLayers.Control.LayerSwitcher({'ascending': false}),
+        new OpenLayers.Control.Attribution({separator:',<br>',
+          template:'<span class="attribution-layers">${layers}</span>'
+          }),
+        new OpenLayers.Control.MousePosition(),
+        new OpenLayers.Control.MousePosition({displayProjection:pro9}),
+    ];
+
+    var map_options = {
+        controls: map_controls,
+
+        maxResolution: "auto",
+        maxExtent: new OpenLayers.Bounds(-105, 33, -94, 45).transform(pro4,pro9)
+
+        ,displayProjection: new OpenLayers.Projection("EPSG:4326")
+        //,projection: "EPSG:900913"
+        //,projection: "EPSG:4326"
+    };
+
+     map = new OpenLayers.Map("map_canvas", map_options);
+
+     var osm = new OpenLayers.Layer.OSM(null,null,{});
+     map.addLayer( osm );
+
+     //var conus_center = new OpenLayers.LonLat(-100.00, 39.0);
+     //map.setCenter(conus_center.transform(pro4, map.getProjectionObject()));
+     //var map_max = new OpenLayers.Bounds(-105, 33, -94, 45).transform(pro4,map.getProjectionObject());
+     //map.zoomToExtent(map_max,true);
+
+     var hays_zoombox = new OpenLayers.Bounds(-100.1, 38.4, -98.5, 39.4).transform(pro4,map.getProjectionObject());
+     map.zoomToExtent(hays_zoombox,true);
+
+     var hays_gridpoint = new OpenLayers.LonLat(-99.268588,38.899496);
+     map.setCenter(hays_gridpoint.transform(pro4, map.getProjectionObject()));
+
+   EOL.createPolygon({
+     map:map, sides:6, activate:true, element:'polygonInfo',
+     radius: 41666.66667
+     });
+
+   return true;
+   }
+</script>
+</head>
+<body onload="initialize()">
+<div id="polygonInfo"></div>
+<div id="map_canvas"></div>
+</body>
+</html>
