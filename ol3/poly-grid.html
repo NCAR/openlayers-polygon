@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/3.5.0/ol-debug.css" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/3.5.0/ol-debug.js"></script>
+    <script src="eol-polygon.js"></script>
+    <title>polygon on grid example</title>
+</head>
+<body>
+<div id="map" class="map"></div>
+<script>
+
+var mainView = new ol.View({
+  center: ol.proj.transform([ -100.980299 , 40.932247 ], 'EPSG:4326', 'EPSG:3857'),
+  zoom: 9
+});
+
+var map = new ol.Map({
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    }),
+  ],
+  target: 'map',
+  view: mainView
+});
+
+var wmsSource = new ol.source.TileWMS({
+  url: 'http://mapserver.eol.ucar.edu/catalog-mapserv?',
+  params: { LAYERS: 'pecanGrid' }
+});
+
+var pecanGrid = new ol.layer.Tile({
+  source: wmsSource
+});
+
+map.addLayer(pecanGrid);
+
+EOL.createPolygon({map:map});
+
+</script>
+</body>
+</html>

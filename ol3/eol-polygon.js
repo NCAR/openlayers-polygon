@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2015 by UCAR
+ * BSD 2-Clause License:
+ * https://raw.githubusercontent.com/NCAR/openlayers-polygon/main/LICENSE
+ *
+ * Usage: see the comments before createPolygon function and the associated file "eol.html"
+ * requires jQuery
+ */
 var EOL = (function(eol,$) {
   var global = this;
 

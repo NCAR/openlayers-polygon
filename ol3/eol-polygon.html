@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
-    <script src="jquery-2.1.4.js"></script>
-    <link rel="stylesheet" href="ol.css" type="text/css">
-    <script src="ol-debug-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/3.5.0/ol-debug.css" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/3.5.0/ol-debug.js"></script>
     <script src="eol-polygon.js"></script>
-    <title>Regular Shape example</title>
+    <title>EOL polygon example</title>
 </head>
 <body>
 <div id="map" class="map"></div>
@@ -29,19 +29,11 @@ var map = new ol.Map({
   view: mainView
 });
 
-var wmsSource = new ol.source.TileWMS({
-  url: 'http://mapserver.eol.ucar.edu/catalog-mapserv?',
-  params: { LAYERS: 'pecanGrid' }
-});
-
-var pecanGrid = new ol.layer.Tile({
-  source: wmsSource
-});
-
-map.addLayer(pecanGrid);
-
 EOL.createPolygon({map:map});
 
 </script>
+
+Click to drag, SHIFT+click to resize, ALT+click to rotate, SHIFT+ALT+click for both.
+(unless your window manager intercepts those keys)
 </body>
 </html>
